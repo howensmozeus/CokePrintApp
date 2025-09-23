@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Image to PDF Converter
 
 A simple web application to convert images to PDF with a specific layout. Upload up to 9 images and convert them into a PDF document with dimensions 210mm × 148mm, arranged in a 3x3 grid.
@@ -73,3 +74,7 @@ The build files will be created in the `build` directory, ready to be deployed t
 ## Credits
 
 Created by MoZeus
+=======
+# CokePrintApp
+A web based app to convert png to PDF with correct formating
+>>>>>>> 5ae33a709c7a4eb49fb216b9944d3b7ce04801e6
