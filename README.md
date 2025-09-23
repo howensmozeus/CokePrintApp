@@ -1,22 +1,23 @@
-<<<<<<< HEAD
-# Image to PDF Converter
+# CokePrintApp
 
-A simple web application to convert images to PDF with a specific layout. Upload up to 9 images and convert them into a PDF document with dimensions 210mm × 148mm, arranged in a 3x3 grid.
+A web-based application to convert 700x700 PNG images to PDF with specific formatting for printing.
 
 ## Features
 
-- Select up to 9 images via file dialog or drag-and-drop
+- Select up to 3 images (700x700 PNG) via file dialog or drag-and-drop
 - Preview selected images before conversion
-- Generate PDF with specific dimensions (210mm × 148mm)
-- Arrange images in a 3x3 grid with customized margins and spacing
-- Automatic PDF download
+- Generate PDF with exact dimensions (210mm × 148mm)
+- Arrange images as 2×2 inch squares in 3 columns
+- Images positioned 3/8 inch from bottom of page
+- Automatic PDF download with sequential naming (finaloutput.001.pdf, finaloutput.002.pdf, etc.)
 - Drag and drop PDF to other applications
-- Sequential PDF naming with counter (finaloutput.001.pdf, finaloutput.002.pdf, etc.)
+- Auto-clear images after PDF generation
 
 ## Technologies Used
 
 - React 19
 - jsPDF (PDF generation)
+- Lucide React (icons)
 - TailwindCSS (styling)
 
 ## Getting Started
@@ -30,8 +31,8 @@ A simple web application to convert images to PDF with a specific layout. Upload
 
 1. Clone the repository:
 ```bash
-git clone [your-repo-url]
-cd image-to-pdf-converter
+git clone https://github.com/[username]/CokePrintApp
+cd CokePrintApp
 ```
 
 2. Install dependencies:
@@ -61,20 +62,21 @@ The build files will be created in the `build` directory, ready to be deployed t
 
 ## Usage Instructions
 
-1. Click the "Select 9 Images" button or drag and drop your images into the drop zone
-2. If you select more than 9 images, you'll enter selection mode where you can choose exactly 9 
+1. Click the "Select 3 Images" button or drag and drop your 700x700 PNG images into the drop zone
+2. If you select more than 3 images, you'll enter selection mode where you can choose exactly 3
 3. Review your selected images in the preview area
-4. Click "Generate PDF" to create your PDF with the 3x3 grid layout
-5. The PDF will automatically download, and remain available for additional downloads or drag-and-drop
+4. Click "Generate PDF (210mm × 148mm)" to create your formatted PDF
+5. The PDF will automatically download with 2×2 inch images arranged in 3 columns, positioned 3/8 inch from the bottom
 
-## License
+## PDF Layout Specifications
 
-[Your license information]
+- **Page Size**: 210mm × 148mm (landscape)
+- **Image Size**: 2×2 inches (50.8mm × 50.8mm) each
+- **Layout**: 3 columns with equal spacing
+- **Bottom Margin**: 3/8 inch (9.525mm)
+- **Side Margins**: 10mm each
+- **Column Spacing**: 10mm between columns
 
 ## Credits
 
 Created by MoZeus
-=======
-# CokePrintApp
-A web based app to convert png to PDF with correct formating
->>>>>>> 5ae33a709c7a4eb49fb216b9944d3b7ce04801e6
