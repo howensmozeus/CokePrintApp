@@ -8,6 +8,7 @@ import './ImageToPdfConverter.css';
 
 export default function ImageToPdfConverter() {
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedPdfs, setSelectedPdfs] = useState([]);
   const [pdfBlob, setPdfBlob] = useState(null);
   const [pdfFileName, setPdfFileName] = useState('');
   const [fileCounter, setFileCounter] = useState(1);
@@ -17,26 +18,44 @@ export default function ImageToPdfConverter() {
   const [availableImages, setAvailableImages] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [autoDeleteSuccess, setAutoDeleteSuccess] = useState(false);
-  const [maxImageCount, setMaxImageCount] = useState(3); // For 3 images
   const fileInputRef = useRef(null);
   const pdfRef = useRef(null);
+
+  // Configuration for 700x700 layout
+  const currentConfig = {
+    name: '3-Column Layout (700x700)',
+    maxImages: 3,
+    pdfWidth: 210,
+    pdfHeight: 148,
+    imageSize: 50.8, // 2 inches
+    bottomPadding: 8, // 8mm from top
+    layout: '3-column'
+  };
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    
+    const pdfFiles = files.filter(file => file.type === 'application/pdf');
+
+    // Handle image files
     if (imageFiles.length > 0) {
       // Show selection mode if more than maxImageCount images are selected
-      if (imageFiles.length > maxImageCount) {
+      if (imageFiles.length > currentConfig.maxImages) {
         setAvailableImages(imageFiles);
         setShowSelectionMode(true);
       } else {
         // Add files
-        const newFiles = [...selectedFiles, ...imageFiles].slice(0, maxImageCount);
+        const newFiles = [...selectedFiles, ...imageFiles].slice(0, currentConfig.maxImages);
         setSelectedFiles(newFiles);
       }
     }
-    
+
+    // Handle PDF files
+    if (pdfFiles.length > 0) {
+      const newPdfs = [...selectedPdfs, ...pdfFiles];
+      setSelectedPdfs(newPdfs);
+    }
+
     // Reset file input
     e.target.value = null;
   };
@@ -44,20 +63,28 @@ export default function ImageToPdfConverter() {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    
+    const pdfFiles = files.filter(file => file.type === 'application/pdf');
+
+    // Handle image files
     if (imageFiles.length > 0) {
       // Show selection mode if more than maxImageCount images are dropped
-      if (imageFiles.length > maxImageCount) {
+      if (imageFiles.length > currentConfig.maxImages) {
         setAvailableImages(imageFiles);
         setShowSelectionMode(true);
       } else {
         // Add files
-        const newFiles = [...selectedFiles, ...imageFiles].slice(0, maxImageCount);
+        const newFiles = [...selectedFiles, ...imageFiles].slice(0, currentConfig.maxImages);
         setSelectedFiles(newFiles);
       }
+    }
+
+    // Handle PDF files
+    if (pdfFiles.length > 0) {
+      const newPdfs = [...selectedPdfs, ...pdfFiles];
+      setSelectedPdfs(newPdfs);
     }
   };
 
@@ -74,6 +101,12 @@ export default function ImageToPdfConverter() {
     const newFiles = [...selectedFiles];
     newFiles.splice(index, 1);
     setSelectedFiles(newFiles);
+  };
+
+  const removePdf = (index) => {
+    const newPdfs = [...selectedPdfs];
+    newPdfs.splice(index, 1);
+    setSelectedPdfs(newPdfs);
   };
 
   // Initialize file counter from localStorage
@@ -137,7 +170,7 @@ export default function ImageToPdfConverter() {
       setSelectedFiles(selectedFiles.filter(file => file.name !== image.name));
     } else {
       // Add to selection if less than maxImageCount images are selected
-      if (selectedFiles.length < maxImageCount) {
+      if (selectedFiles.length < currentConfig.maxImages) {
         setSelectedFiles([...selectedFiles, image]);
       }
     }
@@ -165,17 +198,130 @@ export default function ImageToPdfConverter() {
         URL.revokeObjectURL(file._objectUrl);
       }
     });
-    
+
     // Clear the selectedFiles state
     setSelectedFiles([]);
-    
+    // Also clear PDFs for consistency
+    setSelectedPdfs([]);
+
     // Show auto-delete success message
     setAutoDeleteSuccess(true);
-    
+
     // Hide the success message after 3 seconds
     setTimeout(() => {
       setAutoDeleteSuccess(false);
     }, 3000);
+  };
+
+  // Layout function for 3-column layout
+  const generateThreeColumnLayout = async (pdf, imageDataUrls, config, pdfWidth, pdfHeight) => {
+    const sideMargin = 10; // mm margin from left/right edges
+    const topPadding = config.bottomPadding; // Now padding from top
+    const columnGap = 10; // mm gap between columns
+    const availableWidth = pdfWidth - (2 * sideMargin); // Total width minus side margins
+    const columnWidth = (availableWidth - (2 * columnGap)) / 3; // Width per column
+
+    // Add images to the PDF in 3 columns
+    for (let i = 0; i < Math.min(imageDataUrls.length, config.maxImages); i++) {
+      // Create a temporary image to get dimensions
+      const tempImg = new Image();
+      await new Promise((resolve) => {
+        tempImg.onload = resolve;
+        tempImg.src = imageDataUrls[i];
+      });
+
+      // Set image dimensions from config
+      const imageWidth = config.imageSize;
+      const imageHeight = config.imageSize;
+
+      // Calculate column position and center image within column
+      const columnIndex = i;
+      const columnStart = sideMargin + (columnIndex * (columnWidth + columnGap));
+      const xOffset = columnStart + (columnWidth - imageWidth) / 2; // Center image in column
+
+      // Position image starting from top padding
+      const yOffset = topPadding;
+
+      // Process 700x700 square images
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = tempImg.width;
+      canvas.height = tempImg.height;
+
+      // Rotate the image 180 degrees
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(Math.PI); // 180 degrees in radians
+      ctx.drawImage(tempImg, -tempImg.width / 2, -tempImg.height / 2);
+
+      // Get the processed image data
+      const processedImageData = canvas.toDataURL('image/png', 1.0);
+
+      // Add image to PDF
+      pdf.addImage(
+        processedImageData,
+        'PNG',
+        xOffset,
+        yOffset,
+        imageWidth,
+        imageHeight
+      );
+    }
+  };
+
+  // Layout function for strip layout (73mm x 10mm images)
+  const generateStripLayout = async (pdf, imageDataUrls, config, pdfWidth, pdfHeight) => {
+    const sideMargin = 10; // mm margin from left/right edges
+    const bottomPadding = config.bottomPadding; // From config
+    const stripGap = 5; // mm gap between strips
+    const imageWidth = config.imageWidth; // 73mm
+    const imageHeight = config.imageHeight; // 10mm
+
+    // Center the strips horizontally
+    const availableWidth = pdfWidth - (2 * sideMargin);
+    const xOffset = sideMargin + (availableWidth - imageWidth) / 2;
+
+    // Start from bottom and work upward
+    let yPos = pdfHeight - bottomPadding - imageHeight;
+
+    for (let i = 0; i < Math.min(imageDataUrls.length, config.maxImages); i++) {
+      // Create a temporary image to get dimensions
+      const tempImg = new Image();
+      await new Promise((resolve) => {
+        tempImg.onload = resolve;
+        tempImg.src = imageDataUrls[i];
+      });
+
+      // Process image - stretch to fit 73mm x 10mm dimensions
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = imageWidth * 4; // Higher resolution for better quality
+      canvas.height = imageHeight * 4;
+
+      // Fill with white background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the image stretched to fit the strip dimensions
+      ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
+
+      const processedImageData = canvas.toDataURL('image/png', 1.0);
+
+      // Add image to PDF
+      pdf.addImage(
+        processedImageData,
+        'PNG',
+        xOffset,
+        yPos,
+        imageWidth,
+        imageHeight
+      );
+
+      // Move up for next strip
+      yPos -= (imageHeight + stripGap);
+
+      // Stop if we would go above the top margin
+      if (yPos < 10) break;
+    }
   };
 
   // Generate PDF with specific dimensions and landscape orientation
@@ -209,69 +355,18 @@ export default function ImageToPdfConverter() {
 
       const imageDataUrls = await Promise.all(imagePromises);
       
-      // Create PDF with custom dimensions: 210mm x 148mm
-      const pdfWidth = 210; // mm
-      const pdfHeight = 148; // mm
+      // Create PDF with current config dimensions
+      const pdfWidth = currentConfig.pdfWidth; // mm
+      const pdfHeight = currentConfig.pdfHeight; // mm
 
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: [pdfWidth, pdfHeight]
       });
-      
-      // 3-column layout for 240mm x 200mm page
-      const sideMargin = 10; // mm margin from left/right edges
-      const bottomPadding = 9.525; // 3/8 inch from bottom in mm (0.375 * 25.4)
-      const topMargin = 10; // mm margin from top
-      const columnGap = 10; // mm gap between columns
-      const availableWidth = pdfWidth - (2 * sideMargin); // Total width minus side margins
-      const columnWidth = (availableWidth - (2 * columnGap)) / 3; // Width per column
-      const availableHeight = pdfHeight - bottomPadding - topMargin; // Height from top to 1 inch from bottom
 
-      // Add images to the PDF in 3 columns
-      for (let i = 0; i < Math.min(imageDataUrls.length, 3); i++) {
-        // Create a temporary image to get dimensions
-        const tempImg = new Image();
-        await new Promise((resolve) => {
-          tempImg.onload = resolve;
-          tempImg.src = imageDataUrls[i];
-        });
-
-        // Set fixed 2x2 inch square dimensions (50.8mm x 50.8mm)
-        const imageSize = 50.8; // 2 inches in mm
-        const imageWidth = imageSize;
-        const imageHeight = imageSize;
-
-        // Calculate column position and center image within column
-        const columnIndex = i;
-        const columnStart = sideMargin + (columnIndex * (columnWidth + columnGap));
-        const xOffset = columnStart + (columnWidth - imageWidth) / 2; // Center image in column
-
-        // Position image starting from 3/8 inch from bottom (images extend upward)
-        const yOffset = pdfHeight - bottomPadding - imageHeight;
-
-        // Process 700x700 square images
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = tempImg.width;
-        canvas.height = tempImg.height;
-
-        // Draw the 700x700 image directly (no cropping needed)
-        ctx.drawImage(tempImg, 0, 0);
-
-        // Get the processed image data
-        const processedImageData = canvas.toDataURL('image/png', 1.0);
-
-        // Add image to PDF
-        pdf.addImage(
-          processedImageData,
-          'PNG',
-          xOffset,
-          yOffset,
-          imageWidth,
-          imageHeight
-        );
-      }
+      // Generate PDF with 3-column layout (images will be rotated 180 degrees)
+      await generateThreeColumnLayout(pdf, imageDataUrls, currentConfig, pdfWidth, pdfHeight);
       
       // Convert PDF to blob for download and drag & drop
       const pdfBlob = pdf.output('blob');
@@ -326,20 +421,20 @@ export default function ImageToPdfConverter() {
         className="logo"
       />
       <h1 className="page-title">Image to PDF Converter</h1>
-      
+
       {/* Selection Mode */}
       {showSelectionMode ? (
         <div>
           <div className="selection-header">
             <h2 className="selection-title">
-              Select exactly 3 images ({selectedFiles.length}/3)
+              Select exactly {currentConfig.maxImages} images ({selectedFiles.length}/{currentConfig.maxImages})
             </h2>
             <div className="btn-container">
-              <button 
+              <button
                 onClick={confirmSelection}
-                disabled={selectedFiles.length !== 3}
-                className={`btn ${selectedFiles.length === 9 ? 'btn-success' : 'btn-primary'}`}
-                style={{opacity: selectedFiles.length !== 3 ? 0.5 : 1}}
+                disabled={selectedFiles.length !== currentConfig.maxImages}
+                className={`btn ${selectedFiles.length === currentConfig.maxImages ? 'btn-success' : 'btn-primary'}`}
+                style={{opacity: selectedFiles.length !== currentConfig.maxImages ? 0.5 : 1}}
               >
                 <Check size={16} style={{marginRight: '4px'}} /> Confirm Selection
               </button>
@@ -374,15 +469,15 @@ export default function ImageToPdfConverter() {
             ))}
           </div>
           
-          {selectedFiles.length > 3 && (
+          {selectedFiles.length > currentConfig.maxImages && (
             <p className="alert-danger">
-              Please select exactly 3 images. You've selected {selectedFiles.length} images.
+              Please select exactly {currentConfig.maxImages} images. You've selected {selectedFiles.length} images.
             </p>
           )}
-          
-          {selectedFiles.length < 3 && (
+
+          {selectedFiles.length < currentConfig.maxImages && (
             <p className="alert-warning">
-              Please select {3 - selectedFiles.length} more images.
+              Please select {currentConfig.maxImages - selectedFiles.length} more images.
             </p>
           )}
         </div>
@@ -395,16 +490,16 @@ export default function ImageToPdfConverter() {
               className="btn btn-primary"
               style={{display: 'flex', alignItems: 'center', padding: '12px 24px', fontSize: '18px'}}
             >
-              Select 3 Images
+              Select {currentConfig.maxImages} Images
             </button>
             
-            <input 
-              type="file" 
+            <input
+              type="file"
               ref={fileInputRef}
-              onChange={handleFileSelect} 
-              multiple 
-              accept="image/*" 
-              style={{display: 'none'}} 
+              onChange={handleFileSelect}
+              multiple
+              accept="image/*,application/pdf"
+              style={{display: 'none'}}
             />
           </div>
           
@@ -425,24 +520,24 @@ export default function ImageToPdfConverter() {
             onClick={() => fileInputRef.current.click()}
           >
             <Upload className="drop-zone-icon" />
-            <p className="drop-zone-text">Drag and drop images here, or click to select</p>
-            <p className="drop-zone-subtext">(Maximum 3 images)</p>
+            <p className="drop-zone-text">Drag and drop images or PDFs here, or click to select</p>
+            <p className="drop-zone-subtext">(Maximum {currentConfig.maxImages} images + unlimited PDFs)</p>
           </div>
           
           {/* Selected Images Preview */}
           {selectedFiles.length > 0 && (
             <div className="selected-images">
-              <h2 className="selected-images-title">Selected Images ({selectedFiles.length}/3 columns)</h2>
+              <h2 className="selected-images-title">Selected Images ({selectedFiles.length}/{currentConfig.maxImages})</h2>
               <div className="selected-grid">
                 {selectedFiles.map((file, index) => (
                   <div key={index} className="selected-image-card">
                     <div className="image-container">
-                      <img 
-                        src={URL.createObjectURL(file)} 
-                        alt={`Preview ${index}`} 
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`Preview ${index}`}
                         className="selected-image"
                       />
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           removeImage(index);
@@ -458,6 +553,35 @@ export default function ImageToPdfConverter() {
               </div>
             </div>
           )}
+
+          {/* Selected PDFs Preview */}
+          {selectedPdfs.length > 0 && (
+            <div className="selected-pdfs">
+              <h2 className="selected-pdfs-title">Selected PDFs ({selectedPdfs.length})</h2>
+              <div className="selected-pdf-list">
+                {selectedPdfs.map((file, index) => (
+                  <div key={index} className="selected-pdf-card">
+                    <div className="pdf-info">
+                      <FileText size={24} className="pdf-icon" />
+                      <div className="pdf-details">
+                        <p className="pdf-name">{file.name}</p>
+                        <p className="pdf-size">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removePdf(index);
+                      }}
+                      className="delete-btn"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           {/* Generate PDF Button */}
           <div className="generate-btn-container">
@@ -467,7 +591,7 @@ export default function ImageToPdfConverter() {
               className="btn btn-primary"
               style={{opacity: selectedFiles.length === 0 || isGenerating ? 0.5 : 1}}
             >
-              {isGenerating ? 'Generating...' : 'Generate PDF (210mm × 148mm)'}
+              {isGenerating ? 'Generating...' : `Generate PDF (${currentConfig.pdfWidth}mm × ${currentConfig.pdfHeight}mm)`}
             </button>
           </div>
           

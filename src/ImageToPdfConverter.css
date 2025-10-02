@@ -35,9 +35,31 @@ html, body {
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   text-align: center;
   color: white;
+}
+
+.version-selector {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.version-label {
+  display: block;
+  color: white;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.version-dropdown {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: var(--mozeus-navy);
+  font-size: 14px;
+  min-width: 200px;
 }
 
 .selection-header {
@@ -418,4 +440,60 @@ html, body {
 .selected-image-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* PDF Preview Styles */
+.selected-pdfs {
+  margin-bottom: 24px;
+}
+
+.selected-pdfs-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.selected-pdf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selected-pdf-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  position: relative;
+}
+
+.pdf-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pdf-icon {
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+.pdf-details {
+  flex-grow: 1;
+}
+
+.pdf-name {
+  font-weight: 500;
+  color: var(--mozeus-navy);
+  margin: 0 0 4px 0;
+}
+
+.pdf-size {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
 }
