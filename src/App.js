@@ -21,7 +21,7 @@ export default function ImageToPdfConverter() {
   const fileInputRef = useRef(null);
   const pdfRef = useRef(null);
 
-  // Configuration for 700x700 layout
+  // 
   const currentConfig = {
     name: '3-Column Layout (700x700)',
     maxImages: 3,
