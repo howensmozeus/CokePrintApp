@@ -28,7 +28,9 @@ export default function ImageToPdfConverter() {
     pdfWidth: 210,
     pdfHeight: 148,
     imageSize: 63.5, // 2.5 inches
-    bottomPadding: 1.65, // Adjusted to keep image in same location
+    bottomPadding: 8, // 8mm from top
+    sideMargin: 3.65, // Adjusted to keep images centered
+    columnGap: 3.65, // Adjusted to keep images centered
     layout: '3-column'
   };
 
@@ -215,9 +217,9 @@ export default function ImageToPdfConverter() {
 
   // Layout function for 3-column layout
   const generateThreeColumnLayout = async (pdf, imageDataUrls, config, pdfWidth, pdfHeight) => {
-    const sideMargin = 10; // mm margin from left/right edges
+    const sideMargin = config.sideMargin || 10; // mm margin from left/right edges
     const topPadding = config.bottomPadding; // Now padding from top
-    const columnGap = 10; // mm gap between columns
+    const columnGap = config.columnGap || 10; // mm gap between columns
     const availableWidth = pdfWidth - (2 * sideMargin); // Total width minus side margins
     const columnWidth = (availableWidth - (2 * columnGap)) / 3; // Width per column
 
