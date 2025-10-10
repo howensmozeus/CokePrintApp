@@ -21,14 +21,14 @@ export default function ImageToPdfConverter() {
   const fileInputRef = useRef(null);
   const pdfRef = useRef(null);
 
-  // 
+  //
   const currentConfig = {
     name: '3-Column Layout (700x700)',
     maxImages: 3,
     pdfWidth: 210,
     pdfHeight: 148,
-    imageSize: 50.8, // 2 inches
-    bottomPadding: 8, // 8mm from top
+    imageSize: 63.5, // 2.5 inches
+    bottomPadding: 1.65, // Adjusted to keep image in same location
     layout: '3-column'
   };
 
